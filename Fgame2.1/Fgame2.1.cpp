@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include "stdafx.h"
+#include <iostream>
 
 using namespace sf;
 using namespace std;
@@ -109,7 +110,7 @@ struct paddle {
 	}
 };
 
-template<class T1, class T2> bool checkCollision(T1& Obj1, T2& Obj2) {
+template<class T1, class T2>  bool checkCollision(T1& Obj1, T2& Obj2) {
 	return Obj2.right_side() >= Obj1.left_side() && Obj2.left_side() <= Obj1.right_side()
 		&& Obj2.bottom() >= Obj1.top() && Obj2.top() <= Obj1.bottom();
 }
@@ -158,12 +159,12 @@ struct brick {
 	}
 };
 
-vector<Vector2f> emplace_bricks(vector<Vector2f> bricks) {
+void emplace_coordinates(vector<Vector2f>& bricks)
+{
 	for (int i(0); i < COUNT_BLOCKS_X; ++i)
 		for (int j(0); j < COUNT_BLOCKS_Y; ++j)
 			bricks.emplace_back((i + X_COEFFICIENT) * (BLOCK_WIDTH + RANGE_BEETWEN_BLOCKS), (j + Y_COEFFICIENT) * (BLOCK_HEIGHT + RANGE_BEETWEN_BLOCKS));
-	return bricks;
-} //функция не работает в релизной версии
+}
 void setCollisionBr(ball& cB, brick& cBr) {
 	if (!checkCollision(cB, cBr))
 		return;
@@ -280,19 +281,16 @@ int main() {
 	sound Sound;
 	menu Menu;
 	message Message;
-	vector<Vector2f> bricks = emplace_bricks(bricks);
-	/*vector<Vector2f> bricks; 
-		for (int i(0); i < COUNT_BLOCKS_X; ++i)
-			for (int j(0); j < COUNT_BLOCKS_Y; ++j)
-				bricks.emplace_back((i + X_COEFFICIENT) * (BLOCK_WIDTH + RANGE_BEETWEN_BLOCKS), (j + X_COEFFICIENT) * (BLOCK_HEIGHT + RANGE_BEETWEN_BLOCKS));*/
-	//^для release
+
+	vector<Vector2f> bricks;
+	emplace_coordinates(bricks);
+
 	bool pause = false;
 	bool choose = true;
 
 	RenderWindow window(VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Arcanoid");
 	window.setFramerateLimit(50);
 	while (window.isOpen()) {
-
 		Event event;
 		while (window.pollEvent(event)) {
 			switch (choose) {
