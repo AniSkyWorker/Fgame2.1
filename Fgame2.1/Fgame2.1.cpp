@@ -1,7 +1,9 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include "stdafx.h"
-#include <iostream>
+
+#include "Messages.h"
+#include "Sound.h"
 
 using namespace sf;
 using namespace std;
@@ -21,10 +23,7 @@ const float RANGE_BEETWEN_BLOCKS = 5;
 const float X_COEFFICIENT = 1.75;
 const float Y_COEFFICIENT = 2;
 const int BUTTONS_NUMBER = 2;
-const int MESSAGES_NUMBER = 2;
 const string PLAY_BUTTON = "Play";
-const string WIN_BUTTON = "You WIN!";
-const string LOST_BUTTON = "You Lost!";
 const string ESCAPE_BUTTON = "Exit";
 
 struct ball {
@@ -68,6 +67,7 @@ struct ball {
 			ballspeed.y = BALL_SPEED;
 	}
 };
+
 struct paddle {
 	RectangleShape shape;
 	Vector2f paddlespeed;
@@ -114,6 +114,7 @@ template<class T1, class T2>  bool checkCollision(T1& Obj1, T2& Obj2) {
 	return Obj2.right_side() >= Obj1.left_side() && Obj2.left_side() <= Obj1.right_side()
 		&& Obj2.bottom() >= Obj1.top() && Obj2.top() <= Obj1.bottom();
 }
+
 void setCollisionPaddle(ball& cB, paddle& cP) {
 	if (!checkCollision(cB, cP)) 
 		return;
@@ -125,7 +126,6 @@ void setCollisionPaddle(ball& cB, paddle& cP) {
 	else
 		cB.ballspeed.x = BALL_SPEED;
 }
-
 struct brick {
 	RectangleShape shape;
 	
@@ -187,30 +187,18 @@ void setCollisionBr(ball& cB, brick& cBr) {
 	else
 		cB.ballspeed.y = collision_top ? -BALL_SPEED : BALL_SPEED;
 }
-
-struct sound {
-	SoundBuffer buffer;
-	Sound sound1;
-
-	sound() {
-		buffer.loadFromFile("LASRHVY2.wav");
-		sound1.setBuffer(buffer);
-		sound1.setVolume(100);
-	}
-	void drawbricks(RenderWindow& window, ball& Ball, vector<Vector2f> & bricks) {
-
-		for (int k(0); k < bricks.size(); ++k) {
-			brick Brick(bricks[k].x, bricks[k].y);
-			setCollisionBr(Ball, Brick);
-			if (Brick.destroyed) {
-				sound1.play();
-				bricks.erase(bricks.begin() + k);
-			} else
-				window.draw(Brick.shape);
+void drawbricks(RenderWindow& window, ball& Ball, vector<Vector2f> & bricks, sf::Sound& sound) {
+	for (int k(0); k < bricks.size(); ++k) {
+		brick Brick(bricks[k].x, bricks[k].y);
+		setCollisionBr(Ball, Brick);
+		if (Brick.destroyed) {
+			sound.play();
+			bricks.erase(bricks.begin() + k);
 		}
+		else
+			window.draw(Brick.shape);
 	}
-};
-
+}
 
 struct menu {
 	int selected_item;
@@ -249,28 +237,6 @@ struct menu {
 	}
 };
 
-struct message {
-	Font font;
-	Text messages[MESSAGES_NUMBER];
-
-	message() {
-		font.loadFromFile("arialn.ttf");
-
-		messages[0].setFont(font);
-		messages[0].setColor(Color::White);
-		messages[0].setString(WIN_BUTTON);
-		messages[0].setCharacterSize(50);
-		messages[0].setPosition(Vector2f(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2));
-
-		messages[1].setFont(font);
-		messages[1].setColor(Color::Red);
-		messages[1].setString(LOST_BUTTON);
-		messages[1].setCharacterSize(50);
-		messages[1].setPosition(Vector2f(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2));
-
-	}
-};
-
 int main() {
 	Music music;
 	music.openFromFile("13401934206065.wav");
@@ -280,7 +246,6 @@ int main() {
 	paddle Paddle(WINDOW_WIDTH / 2.f, WINDOW_HEIGHT - 10);
 	sound Sound;
 	menu Menu;
-	message Message;
 
 	vector<Vector2f> bricks;
 	emplace_coordinates(bricks);
@@ -288,7 +253,8 @@ int main() {
 	bool pause = false;
 	bool choose = true;
 
-	RenderWindow window(VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Arcanoid");
+	RenderWindow window(VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Arcanoid", sf::Style::Close);
+	Messages messages(window);
 	window.setFramerateLimit(50);
 	while (window.isOpen()) {
 		Event event;
@@ -348,10 +314,12 @@ int main() {
 				if ((Ball.y() < WINDOW_HEIGHT) && (bricks.size() != 0)) {
 					window.draw(Paddle.shape);
 					window.draw(Ball.shape);
-					Sound.drawbricks(window, Ball, bricks);
+					drawbricks(window, Ball, bricks, Sound.sound_effect);
 				}
-				else if (bricks.size() == 0) window.draw(Message.messages[0]);
-				else if (Ball.y() > WINDOW_HEIGHT) window.draw(Message.messages[1]);
+				else if (bricks.size() == 0)
+					window.draw(messages.message[0]);
+				else if (Ball.y() > WINDOW_HEIGHT)
+					window.draw(messages.message[1]);
 				break;
 
 			case 1:
